@@ -144,12 +144,19 @@ func (p *DockerJSONReader) parseDockerJSONLog(message *reader.Message, msg *logL
 	if err != nil {
 		return errors.Wrap(err, "parsing docker timestamp")
 	}
+	message.Ts = ts
 
 	message.AddFields(common.MapStr{
 		"stream": msg.Stream,
 	})
 	message.Content = []byte(msg.Log)
-	message.Ts = ts
+
+	//Adding condition to handle log lines without "log" field
+	if len(message.Content) == 0 {
+		msg.Partial = true
+		return nil
+	}
+
 	msg.Partial = message.Content[len(message.Content)-1] != byte('\n')
 
 	return nil
